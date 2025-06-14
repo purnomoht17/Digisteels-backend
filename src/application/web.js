@@ -19,6 +19,7 @@ web.use(cors({
   origin: [
     "http://localhost:3000",
     "https://digisteels-fo1y.vercel.app",
+    "https://uas-software-development-kelompok7.vercel.app",
     "https://digisteels.com",
     "https://www.digisteels.com"
   ],
