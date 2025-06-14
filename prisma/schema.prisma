@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Pelanggan {
+  id                String               @id @default(auto()) @map("_id") @db.ObjectId
+  nama              String
+  email             String               @unique
+  password          String
+  token             String?
+  keranjang         KeranjangBelanja[]
+  pesanan           Pesanan[]
+  pembatalanPesanan PembatalanPesanan[]
+}
+
+model Admin {
+  id                String              @id @default(auto()) @map("_id") @db.ObjectId
+  username          String              @unique
+  password          String
+  token             String?
+  laporanPenjualan  LaporanPenjualan[]
+}
+
+model Produk {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  namaProduk String
+  kategori   String
+  gambar     String?
+  varian     ProdukVarian[]
+  status     StatusProduk   @default(AKTIF)
+}
+
+enum StatusProduk {
+  AKTIF
+  NONAKTIF
+}
+
+model ProdukVarian {
+  id             String             @id @default(auto()) @map("_id") @db.ObjectId
+  produkId       String             @db.ObjectId
+  produk         Produk             @relation(fields: [produkId], references: [id])
+  size           String?
+  thickness      Float?
+  hole           Float?
+  harga          Float
+  stok           Int
+  keranjang      KeranjangBelanja[] @relation("KeranjangBelanjaToProdukVarian")
+}
+
+model KeranjangBelanja {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String       @db.ObjectId
+  produkVarianId String       @db.ObjectId
+  jumlah         Int          @default(1)
+  totalHarga     Float        @default(0)
+  isOrdered      Boolean      @default(false)
+  user           Pelanggan    @relation(fields: [userId], references: [id])
+  produkVarian   ProdukVarian @relation("KeranjangBelanjaToProdukVarian", fields: [produkVarianId], references: [id])
+  pesanan        Pesanan[]
+}
+
+model Pesanan {
+  id                String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String               @db.ObjectId
+  user              Pelanggan            @relation(fields: [userId], references: [id])
+  tanggalPemesanan  DateTime             @default(now())
+  status            StatusPesanan
+  ongkosKirim       Float?               @default(0)
+  alamatDetail      String
+  provinsi          String
+  kabupaten         String
+  kecamatan         String
+  kelurahan         String
+  nomorTelepon      String
+  keranjangId       String               @db.ObjectId
+  keranjang         KeranjangBelanja     @relation(fields: [keranjangId], references: [id])
+  bankName          String
+  accountName       String
+  accountNumber     Int
+  buktiTransferUrl  String
+  alasanPenolakan String?
+  pembatalanPesanan PembatalanPesanan?
+  laporanPenjualan  LaporanPenjualan?
+
+  @@map("Pesanan")
+}
+
+enum StatusPesanan {
+  PENDING
+  ON_PROCESS
+  ON_DELIVERY
+  DONE
+  CANCELLED
+}
+
+model PembatalanPesanan {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  pesananId          String             @db.ObjectId @unique
+  userId             String             @db.ObjectId
+  alasanPembatalan   String
+  tanggalPengajuan   DateTime
+  statusPembatalan   StatusPembatalan
+  tanggalDirespon    DateTime?
+  catatanAdmin       String?
+  refundStatus       RefundStatus
+  jumlahRefund       Float              @db.Double
+  pesanan            Pesanan            @relation(fields: [pesananId], references: [id])
+  user               Pelanggan          @relation(fields: [userId], references: [id])
+}
+
+enum StatusPembatalan {
+  menunggu
+  disetujui
+  ditolak
+}
+
+enum RefundStatus {
+  belum_diproses
+  diproses
+  selesai
+}
+
+model LaporanPenjualan {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  tanggalLaporan  DateTime  @default(now())
+  pesananId       String    @unique @db.ObjectId
+  pesanan         Pesanan   @relation(fields: [pesananId], references: [id])
+  totalPenjualan  Float
+  adminId         String?   @db.ObjectId
+  admin           Admin?    @relation(fields: [adminId], references: [id])
+  keterangan      String?
+
+  @@map("LaporanPenjualan")
+}
