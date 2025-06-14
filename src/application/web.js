@@ -16,7 +16,12 @@ import { uploadProdukRouter } from "../route/upload-produk-api.js";
 export const web = express();
 
 web.use(cors({
-  origin: "http://localhost:3000",
+  origin: [
+    "http://localhost:3000",
+    "https://digisteels-2ez7.vercel.app",
+    "https://digisteels.com",
+    "https://www.digisteels.com"
+  ],
   credentials: true
 }));
 
