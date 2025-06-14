@@ -18,7 +18,7 @@ export const web = express();
 web.use(cors({
   origin: [
     "http://localhost:3000",
-    "https://digisteels-fo1y.vercel.app/",
+    "https://digisteels-fo1y.vercel.app",
     "https://digisteels.com",
     "https://www.digisteels.com"
   ],
