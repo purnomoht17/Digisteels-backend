@@ -28,46 +28,61 @@ web.use(cors({
 
 web.use(express.json());
 
-// Public routes
 web.use(publicRouter);
 
-// Protected routes
-web.use(uploadRouter);
-web.use(uploadProdukRouter); // Gunakan router baru untuk gambar produk
 web.use("/api/admin", adminRouter);
 web.use("/api/pelanggan", pelangganRouter);
-web.use(produkRouter);
-web.use(keranjangRouter);
-web.use(pesananRouter);
-web.use(pembatalanRouter);
-web.use(laporanRouter);
+web.use("/api/produk", produkRouter);
+web.use("/api/keranjang", keranjangRouter);
+web.use("/api/pesanan", pesananRouter);
+web.use("/api/pembatalan", pembatalanRouter);
+web.use("/api/laporan", laporanRouter);
+web.use('/api', uploadRouter);
+web.use('/api', uploadProdukRouter);
 
-// ✅ Proxy API Wilayah Indonesia → supaya aman CORS
-web.get("/proxy/provinces", async (req, res) => {
-  const response = await fetch("https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json");
-  const data = await response.json();
-  res.json(data);
+
+// Proxy API Wilayah Indonesia
+web.get("/api/proxy/provinces", async (req, res, next) => {
+  try {
+    const response = await fetch("https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json");
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
 });
 
-web.get("/proxy/regencies/:provinceId", async (req, res) => {
-  const { provinceId } = req.params;
-  const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/regencies/${provinceId}.json`);
-  const data = await response.json();
-  res.json(data);
+web.get("/api/proxy/regencies/:provinceId", async (req, res, next) => {
+  try {
+    const { provinceId } = req.params;
+    const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/regencies/${provinceId}.json`);
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
 });
 
-web.get("/proxy/districts/:regencyId", async (req, res) => {
-  const { regencyId } = req.params;
-  const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/districts/${regencyId}.json`);
-  const data = await response.json();
-  res.json(data);
+web.get("/api/proxy/districts/:regencyId", async (req, res, next) => {
+  try {
+    const { regencyId } = req.params;
+    const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/districts/${regencyId}.json`);
+    const data = await response.json();
+    res.json(data);
+  } catch (e) {
+    next(e);
+  }
 });
 
-web.get("/proxy/villages/:districtId", async (req, res) => {
-  const { districtId } = req.params;
-  const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/villages/${districtId}.json`);
-  const data = await response.json();
-  res.json(data);
+web.get("/api/proxy/villages/:districtId", async (req, res, next) => {
+  try {
+    const { districtId } = req.params;
+    const response = await fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/villages/${districtId}.json`);
+    const data = await response.json();
+    res.json(data);
+  } catch(e) {
+    next(e);
+  }
 });
 
 web.use(errorMiddleware);

@@ -2,7 +2,10 @@ import { validate } from "../validation/validation.js";
 import {
   registerPelangganValidation,
   loginPelangganValidation,
-  getPelangganValidation
+  getPelangganValidation,
+  updatePelangganValidation,
+  updatePasswordValidation,
+  deletePelangganValidation 
 } from "../validation/pelanggan-validation.js";
 import { prismaClient } from "../application/database.js";
 import { ResponseError } from "../error/response-error.js";
@@ -12,24 +15,20 @@ import { v4 as uuid } from "uuid";
 const register = async (request) => {
   const pelanggan = validate(registerPelangganValidation, request);
 
-  const existing = await prismaClient.pelanggan.findUnique({
+  const existingPelanggan = await prismaClient.pelanggan.findUnique({
     where: {
       email: pelanggan.email
     }
   });
 
-  if (existing) {
+  if (existingPelanggan) {
     throw new ResponseError(400, "Email telah digunakan");
   }
 
-  const hashedPassword = await bcrypt.hash(pelanggan.password, 10);
+  pelanggan.password = await bcrypt.hash(pelanggan.password, 10);
 
   return prismaClient.pelanggan.create({
-    data: {
-      nama: pelanggan.nama,
-      email: pelanggan.email,
-      password: hashedPassword
-    },
+    data: pelanggan,
     select: {
       id: true,
       nama: true,
@@ -57,25 +56,142 @@ const login = async (request) => {
   }
 
   const token = uuid().toString();
-  const updated = await prismaClient.pelanggan.update({
+  await prismaClient.pelanggan.update({
     data: {
-      token
+      token: token
     },
     where: {
       email: pelanggan.email
-    },
-    select: {
-      token: true
     }
   });
   
   return {
-    token: updated.token,        
+    token: token,
     nama: pelanggan.nama,
     email: pelanggan.email
   };
-  
 };
+
+const get = async (email) => {
+  const validatedEmail = validate(getPelangganValidation, email);
+
+  const pelanggan = await prismaClient.pelanggan.findUnique({
+    where: {
+      email: validatedEmail
+    },
+    select: {
+      nama: true,
+      email: true
+    }
+  });
+
+  if (!pelanggan) {
+    throw new ResponseError(404, "Pelanggan tidak ditemukan");
+  }
+
+  return pelanggan;
+}
+
+const update = async (user, request) => {
+  const updateRequest = validate(updatePelangganValidation, request);
+  const dataToUpdate = {};
+
+  if (updateRequest.email) {
+    const emailExists = await prismaClient.pelanggan.count({
+      where: {
+        email: updateRequest.email,
+        NOT: {
+          email: user.email 
+        }
+      }
+    });
+
+    if (emailExists) {
+      throw new ResponseError(400, "Email baru telah digunakan oleh pengguna lain.");
+    }
+    dataToUpdate.email = updateRequest.email;
+  }
+
+  if (updateRequest.nama) {
+    dataToUpdate.nama = updateRequest.nama;
+  }
+
+  const updatedPelanggan = await prismaClient.pelanggan.update({
+    where: {
+      email: user.email 
+    },
+    data: dataToUpdate,
+    select: {
+      nama: true,
+      email: true
+    }
+  });
+
+  return updatedPelanggan;
+}
+
+const updatePassword = async (user, request) => {
+  const updatePasswordRequest = validate(updatePasswordValidation, request);
+
+  const pelanggan = await prismaClient.pelanggan.findUnique({
+    where: {
+      email: user.email
+    }
+  });
+
+  if (!pelanggan) {
+    throw new ResponseError(404, "Pelanggan tidak ditemukan");
+  }
+
+  const isOldPasswordValid = await bcrypt.compare(updatePasswordRequest.oldPassword, pelanggan.password);
+  if (!isOldPasswordValid) {
+    throw new ResponseError(400, "Password lama salah");
+  }
+
+  const newHashedPassword = await bcrypt.hash(updatePasswordRequest.newPassword, 10);
+
+  await prismaClient.pelanggan.update({
+    where: {
+      email: user.email
+    },
+    data: {
+      password: newHashedPassword
+    }
+  });
+
+  return { message: "Password berhasil diperbarui" };
+}
+
+/**
+ * @param {object} user
+ * @param {object} request
+ */
+const remove = async (user, request) => {
+  const deleteRequest = validate(deletePelangganValidation, request);
+
+  const pelanggan = await prismaClient.pelanggan.findUnique({
+      where: {
+          email: user.email
+      }
+  });
+
+  if (!pelanggan) {
+      throw new ResponseError(404, "Pelanggan tidak ditemukan.");
+  }
+
+  const isPasswordValid = await bcrypt.compare(deleteRequest.password, pelanggan.password);
+  if (!isPasswordValid) {
+      throw new ResponseError(400, "Password salah, penghapusan akun dibatalkan.");
+  }
+
+  await prismaClient.pelanggan.delete({
+      where: {
+          email: user.email
+      }
+  });
+
+  return { message: "Akun berhasil dihapus secara permanen." };
+}
 
 const logout = async (email) => {
   email = validate(getPelangganValidation, email);
@@ -106,5 +222,9 @@ const logout = async (email) => {
 export default {
   register,
   login,
+  get,
+  update,
+  updatePassword,
+  remove,
   logout
 };

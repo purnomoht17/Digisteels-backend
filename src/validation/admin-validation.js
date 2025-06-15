@@ -12,8 +12,24 @@ const loginAdminValidation = Joi.object({
 
 const getAdminValidation = Joi.string().max(100).required();
 
+const updateAdminProfileValidation = Joi.object({
+  username: Joi.string().max(255).required()
+});
+
+const updateAdminPasswordValidation = Joi.object({
+  oldPassword: Joi.string().max(255).required(),
+  newPassword: Joi.string().max(255).required(),
+});
+
+const deleteAdminValidation = Joi.object({
+  password: Joi.string().max(255).required()
+});
+
 export {
     registerAdminValidation,
     loginAdminValidation,
-    getAdminValidation
+    getAdminValidation,
+    updateAdminProfileValidation,
+    updateAdminPasswordValidation,
+    deleteAdminValidation
 }
