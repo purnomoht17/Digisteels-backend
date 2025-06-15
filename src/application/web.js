@@ -28,20 +28,18 @@ web.use(cors({
 
 web.use(express.json());
 
-web.use(publicRouter);
+web.use(publicRouter); 
+web.use(produkRouter); 
+web.use(keranjangRouter);
+web.use(pesananRouter); 
+web.use(pembatalanRouter);
+web.use(laporanRouter); 
+web.use(uploadRouter); 
+web.use(uploadProdukRouter);
 
-web.use("/api/admin", adminRouter);
-web.use("/api/pelanggan", pelangganRouter);
-web.use("/api/produk", produkRouter);
-web.use("/api/keranjang", keranjangRouter);
-web.use("/api/pesanan", pesananRouter);
-web.use("/api/pembatalan", pembatalanRouter);
-web.use("/api/laporan", laporanRouter);
-web.use('/api', uploadRouter);
-web.use('/api', uploadProdukRouter);
+web.use("/api/admin", adminRouter); //
+web.use("/api/pelanggan", pelangganRouter); //
 
-
-// Proxy API Wilayah Indonesia
 web.get("/api/proxy/provinces", async (req, res, next) => {
   try {
     const response = await fetch("https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json");
